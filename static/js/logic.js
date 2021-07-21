@@ -2,9 +2,37 @@
 var queryUrl = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson";
 console.log(queryUrl)
 
+// Function to size up the radius of circle markers
+function circleSize (magnitude) {
+  return magnitude * 5;
+}
+
+// Function to shade in earthquake using depth as value
+function colorCode(depth) {
+if (depth >= -10 && depth < 10 ) {
+  return "#ADFF2F"
+} 
+else if (depth >= 10 && depth < 30) {
+  return "#FFFF00"
+} 
+else if (depth >= 30 && depth < 50) {
+  return "#FFA500"
+} 
+else if (depth >= 50 && depth < 70) {
+  return "#FF4500"
+}
+else if (depth >= 70 && depth < 90) {
+  return "#FF0000"
+} else if (depth >= 90) {}
+  return "#8B0000"
+}
+
+
+
 // Perform a GET request to the query URL
 d3.json(queryUrl).then(function(data) {
   // Once we get a response, send the data.features object to the createFeatures function
+
   createFeatures(data.features);
 });
 
@@ -13,13 +41,28 @@ function createFeatures(earthquakeData) {
   
   // Give each feature a popup describing the place and time of the earthquake
   function onEachFeature(feature, layer) {
-    layer.bindPopup("<h3>" + feature.properties.place + "<br>" + "Magnitude: " + feature.properties.mag +
+    layer.bindPopup("<h3>" + feature.properties.place + "<br>" + "Magnitude: " + feature.properties.mag + "<br>" + "Depth: " + feature.geometry.coordinates[2] +
       "</h3><hr><p>" + new Date(feature.properties.time) + "</p>");
   }
 
-  // Create a GeoJSON layer containing the features array on the earthquakeData object
-  // Run the onEachFeature function once for each piece of data in the array
+ 
+
+  // Create a GeoJSON layer containing the circle marker along with size, color, and popUps
   var earthquakes = L.geoJSON(earthquakeData, {
+      pointToLayer: function (feature, latlng) {
+          return L.circleMarker(latlng);
+      },
+      style: function(feature){
+        console.log(feature.geometry.coordinates[2])
+        return{
+          radius: circleSize(feature.properties.mag),
+          fillColor: colorCode(feature.geometry.coordinates[2]),
+          color: "black",
+          weight: 1,
+          opacity: 1,
+          fillOpacity: 0.8,
+        }
+      },
     onEachFeature: onEachFeature
   });
 
@@ -63,7 +106,7 @@ function createMap(earthquakes) {
     center: [
       37.09, -95.71
     ],
-    zoom: 5,
+    zoom: 3,
     layers: [streetmap, earthquakes]
   });
 
